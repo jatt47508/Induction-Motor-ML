@@ -1,0 +1,420 @@
+================================================================================
+                INDUCTION MOTOR FAULT DETECTION
+                PROJECT REPORT (Source Material)
+================================================================================
+
+Prepared for: Academic submission
+Project Type: Binary Classification using Existing ML Models
+Repository:   https://github.com/jatt47508/Induction-Motor-ML
+
+================================================================================
+1. ABSTRACT
+================================================================================
+
+This project addresses the problem of classifying the operating condition of
+an induction motor as either NORMAL or FAULT based on four sensor
+measurements: voltage, current, temperature, and vibration. Using a labeled
+dataset of 8,000 samples, an existing (off-the-shelf) XGBoost gradient
+boosting classifier was employed to perform binary classification. The model
+achieved 99.8% accuracy, 99.9% F1 score, and 1.0000 ROC-AUC on a held-out
+test set of 1,600 samples. A standalone web-based demo was developed for
+real-time motor health assessment.
+
+Keywords: Induction Motor, Fault Detection, Predictive Maintenance, XGBoost,
+          Binary Classification, Machine Learning
+
+================================================================================
+2. INTRODUCTION
+================================================================================
+
+2.1 BACKGROUND
+
+Induction motors are the most widely used electric motors in industrial
+applications, accounting for approximately 70-80% of total electricity
+consumed in industrialized countries. Unexpected motor failures lead to
+significant downtime, maintenance costs, and safety hazards. Predictive
+maintenance using sensor data and machine learning offers a cost-effective
+alternative to traditional scheduled maintenance.
+
+2.2 PROBLEM STATEMENT
+
+Given voltage, current, temperature, and vibration measurements from an
+induction motor, determine whether the motor is operating normally or under
+a fault condition.
+
+2.3 OBJECTIVES
+
+  1. Acquire and explore a labeled motor sensor dataset
+  2. Preprocess the data (cleaning, encoding, scaling, splitting)
+  3. Apply an existing ML model for binary classification
+  4. Evaluate model performance using standard metrics
+  5. Deploy a user-facing demo for real-time prediction
+
+2.4 SCOPE
+
+This project uses pre-existing (off-the-shelf) machine learning algorithms
+as assigned. No custom neural network architectures or novel algorithms were
+developed. The focus is on the end-to-end ML pipeline: data -> preprocessing
+-> training -> evaluation -> deployment.
+
+================================================================================
+3. DATASET
+================================================================================
+
+3.1 SOURCE
+
+  Name:     Industrial Motor Data
+  Source:   Kaggle (kaggle.com/datasets/danielpetrova/industrial-motor-data)
+  Format:   CSV, 8,000 rows x 5 columns
+  Size:     241 KB
+
+3.2 FEATURES
+
+  Column              Unit     Description
+  ------------------  -------  ---------------------------------------
+  Voltage (V)         Volts    Supply voltage to the motor
+  Current (A)         Amps     Current drawn by the motor
+  Temperature (degC)  Celsius  Motor winding/housing temperature
+  Vibration (mm/s)    mm/s     Vibration velocity (RMS)
+  Label               -        Operating condition class
+
+3.3 CLASS DISTRIBUTION
+
+  Class       Count    Percentage   Description
+  ----------  -------  ----------   ---------------------------------
+  normal      2,000    25.0%        Motor operating normally
+  low         2,000    25.0%        Low-severity fault
+  moderate    2,000    25.0%        Moderate-severity fault
+  high        2,000    25.0%        High-severity fault
+  ----------  -------  ----------
+  TOTAL       8,000    100.0%
+
+3.4 DESCRIPTIVE STATISTICS (ALL DATA)
+
+  Statistic   Voltage(V)   Current(A)   Temp(degC)   Vibration(mm/s)
+  ----------  -----------  -----------  -----------  ---------------
+  Mean        382.50       18.37        67.22        10.59
+  Std Dev     56.22        12.56        26.28        9.66
+  Min         200.26       0.00         30.01        0.00
+  25%         356.47       10.61        44.76        2.53
+  Median      390.54       15.60        60.24        5.07
+  75%         410.48       26.96        89.99        19.99
+  Max         479.97       49.99        119.98       29.99
+
+3.5 PER-CLASS MEAN VALUES
+
+  Class       Voltage(V)   Current(A)   Temp(degC)   Vibration(mm/s)
+  ----------  -----------  -----------  -----------  ---------------
+  normal      400.16       14.93        44.84        2.52
+  low         389.04       12.09        52.12        4.35
+  moderate    368.90       24.18        67.18        10.42
+  high        371.91       22.27        104.75       25.05
+
+  Observation: As fault severity increases, temperature and vibration
+  increase significantly. Normal motors run at ~400V, ~15A, ~45 degC,
+  ~2.5 mm/s. High-fault motors show ~105 degC and ~25 mm/s vibration.
+
+3.6 DATA QUALITY
+
+  - Missing values: 0
+  - Duplicate rows: 0
+  - Class balance: Perfectly balanced (2,000 per class)
+  - Data type: All numerical (float), no categorical encoding needed
+
+================================================================================
+4. METHODOLOGY
+================================================================================
+
+4.1 PIPELINE OVERVIEW
+
+  Step 1: Inspect    -> Understand raw data structure and statistics
+  Step 2: Preprocess -> Clean, encode, scale, split
+  Step 3: Train      -> Fit existing model on training data
+  Step 4: Evaluate   -> Assess performance on unseen test data
+  Step 5: Deploy     -> Web-based demo for real-time prediction
+
+4.2 PREPROCESSING
+
+  a) Column Renaming:
+     "Voltage (V)"      -> voltage
+     "Current (A)"      -> current
+     "Temperature (°C)" -> temperature
+     "Vibration (mm/s)" -> vibration
+     "Label"            -> label
+
+  b) Binary Label Encoding:
+     The original 4-class problem was mapped to binary classification:
+       normal        -> 0  (No Fault)
+       low           -> 1  (Fault)
+       moderate      -> 1  (Fault)
+       high          -> 1  (Fault)
+
+     Result: 2,000 normal (0) vs 6,000 fault (1)
+
+  c) Feature Scaling:
+     StandardScaler (z-score normalization) applied:
+       z = (x - mean) / std
+     This centers features at zero with unit variance, which benefits
+     distance-based algorithms (SVM, MLP).
+
+  d) Train/Test Split:
+     Stratified 80/20 split maintaining class proportions:
+       Training set: 6,400 samples (1,600 normal + 4,800 fault)
+       Test set:     1,600 samples (400 normal + 1,200 fault)
+     Random seed: 42 (for reproducibility)
+
+4.3 MODEL SELECTION
+
+  Model: XGBoost (eXtreme Gradient Boosting)
+
+  Why XGBoost:
+  - State-of-the-art for tabular/structured data
+  - Handles non-linear relationships between features
+  - Built-in regularization to prevent overfitting
+  - Existing algorithm (no custom architecture required)
+  - Industry-standard, well-documented
+
+  Hyperparameters:
+    n_estimators  = 200    (number of boosting rounds)
+    max_depth     = 6      (maximum tree depth)
+    learning_rate = 0.3    (default, via XGBoost API)
+    eval_metric   = logloss
+    random_state  = 42
+    n_jobs        = -1     (use all CPU cores)
+
+  How XGBoost Works (Brief):
+  1. Builds an initial prediction (base score)
+  2. Computes gradients (errors) of the loss function
+  3. Builds a decision tree to fit the gradients
+  4. Adds the tree to the ensemble with a learning rate weight
+  5. Repeats steps 2-4 for 200 rounds
+  6. Final prediction = sum of all tree outputs
+
+4.4 ALTERNATIVE MODELS CONSIDERED
+
+  The pipeline supports multiple existing models:
+
+  Model              Status        Notes
+  -----------------  ------------  -------------------------------
+  XGBoost            Used          Best for tabular data
+  Random Forest      Blocked (*)   Windows policy blocked DLL
+  LightGBM           Blocked (*)   Windows policy blocked DLL
+  SVM (RBF)          Available     Alternative option
+  MLP (Neural Net)   Available     Alternative option
+
+  (*) Application Control policy on the development machine blocked
+      certain DLL imports. XGBoost was selected as it was functional
+      and provides state-of-the-art performance.
+
+================================================================================
+5. RESULTS AND EVALUATION
+================================================================================
+
+5.1 PERFORMANCE METRICS
+
+  Metric          Score      Interpretation
+  --------------  ---------  ------------------------------------------
+  Accuracy        99.81%     1,597 out of 1,600 predictions correct
+  F1 Score        99.88%     Harmonic mean of precision and recall
+  ROC-AUC         1.0000     Perfect separation between classes
+  Train Accuracy  100.00%    Model fit training data perfectly
+
+5.2 CLASSIFICATION REPORT
+
+                  Precision   Recall   F1-Score   Support
+  --------------  ---------   ------   --------   -------
+  normal (0)      1.00        0.99     1.00       400
+  fault  (1)      1.00        1.00     1.00       1,200
+  --------------  ---------   ------   --------   -------
+  accuracy                            1.00       1,600
+  macro avg       1.00        0.99     1.00       1,600
+  weighted avg    1.00        1.00     1.00       1,600
+
+5.3 CONFUSUSION MATRIX
+
+                    Predicted
+                  Normal   Fault
+  Actual  Normal    396       4
+          Fault       0    1,200
+
+  - 396/400 normal samples correctly identified
+  - 1200/1200 fault samples correctly identified
+  - 4 false alarms (normal classified as fault)
+  - 0 missed faults (fault classified as normal)
+
+5.4 METRIC DEFINITIONS
+
+  Accuracy  = (TP + TN) / (TP + TN + FP + FN)
+              Percentage of all correct predictions
+
+  Precision = TP / (TP + FP)
+              Of all predicted faults, how many are actually faults
+
+  Recall    = TP / (TP + FN)
+              Of all actual faults, how many were detected
+
+  F1 Score  = 2 * (Precision * Recall) / (Precision + Recall)
+              Harmonic mean balancing precision and recall
+
+  ROC-AUC   = Area Under Receiver Operating Characteristic Curve
+              Measures model's ability to distinguish between classes
+              1.0 = perfect, 0.5 = random guessing
+
+  Where: TP = True Positive, TN = True Negative
+         FP = False Positive, FN = False Negative
+
+5.5 TRAINING VS TEST ACCURACY
+
+  Train Accuracy: 100.00%
+  Test Accuracy:   99.81%
+  Difference:        0.19%
+
+  The small gap indicates minimal overfitting. The model generalizes
+  well to unseen data.
+
+================================================================================
+6. DEPLOYMENT - WEB DEMO
+================================================================================
+
+6.1 OVERVIEW
+
+  A standalone HTML page (index.html) was developed to provide
+  real-time motor fault prediction without requiring Python or a
+  server. The page runs entirely in the browser using JavaScript.
+
+6.2 FEATURES
+
+  - 4 input fields (voltage, current, temperature, vibration)
+  - Dual input mode:
+      * Number inputs: Accept any value (free-form prediction)
+      * Sliders: Limited to trained data ranges (guided exploration)
+  - Real-time validation with color-coded feedback
+  - Visual result: GREEN (Normal) or RED (Fault)
+  - Per-parameter breakdown showing which values are out of range
+  - Health indicator bar
+  - Model disclaimer for academic integrity
+
+6.3 NORMAL OPERATING RANGES (from training data)
+
+  Parameter     Normal Range    Slider Range (trained data)
+  ------------  --------------  --------------------------
+  Voltage       380 - 420 V     200 - 480 V
+  Current       10 - 20 A       0 - 50 A
+  Temperature   30 - 60 degC    30 - 120 degC
+  Vibration     0 - 5 mm/s      0 - 30 mm/s
+
+6.4 ACCESS
+
+  GitHub Pages: https://jatt47508.github.io/Induction-Motor-ML/
+  Source File:   index.html (in repository root)
+
+================================================================================
+7. PROJECT STRUCTURE
+================================================================================
+
+  Induction-Motor-ML/
+  |-- AGENTS.md              AI agent instructions
+  |-- README.md              Project documentation (GitHub landing page)
+  |-- index.html             Interactive web demo
+  |-- requirements.txt       Python dependencies
+  |-- .gitignore             Git ignore rules
+  |-- data/
+  |   |-- raw/               Original Kaggle CSV (gitignored, 241 KB)
+  |   |-- processed/
+  |       |-- train.csv      Training set (6,400 rows)
+  |       |-- test.csv       Test set (1,600 rows)
+  |       |-- scaler.pkl     Saved StandardScaler
+  |-- src/
+  |   |-- inspect_data.py    Data exploration script
+  |   |-- preprocess.py      Data preprocessing pipeline
+  |   |-- train.py           Model training script
+  |   |-- evaluate.py        Model evaluation script
+  |-- models/
+  |   |-- xgboost.pkl        Trained model (gitignored)
+  |-- results/
+  |   |-- metrics.txt        Performance metrics
+  |   |-- confusion_matrix.png  Confusion matrix visualization
+  |-- report/                Final report documents
+  |-- presentation/          Presentation slides
+  |-- notebooks/             Exploratory notebooks
+  |-- tests/                 Unit tests
+
+================================================================================
+8. TOOLS AND TECHNOLOGIES
+================================================================================
+
+  Category        Technology          Version
+  --------------  ------------------  --------
+  Language        Python              3.14.7
+  Data Handling   pandas              3.0.6
+  Numerical       NumPy               2.5.3
+  ML Framework    scikit-learn        1.9.1
+  Model           XGBoost             3.4.1
+  Visualization   matplotlib          3.11.2
+  Model Persist   joblib              1.6.0
+  CLI Framework   click               8.5.0
+  Testing         pytest              9.1.1
+  Version Control Git                 2.55.0
+  Hosting         GitHub Pages        -
+  IDE/Editor      OpenCode CLI        -
+
+================================================================================
+9. LIMITATIONS
+================================================================================
+
+  1. Limited Dataset: Only 8,000 samples from a single source. Real-world
+     motors may exhibit different patterns.
+
+  2. Synthetic/Simulated Data: The Kaggle dataset may be synthetic and not
+     fully representative of real industrial motor behavior.
+
+  3. Binary Simplification: Mapping 4 classes to binary loses granularity.
+     A multi-class model could distinguish fault severity.
+
+  4. Single Motor Type: Dataset represents one motor type. Different motors
+     (sizes, ratings, ages) may have different normal operating ranges.
+
+  5. No Temporal Features: Each sample is independent. Time-series patterns
+     (trend, degradation rate) are not captured.
+
+  6. Feature Limitation: Only 4 features used. Additional features like
+     power factor, harmonic distortion, and speed could improve accuracy.
+
+  7. Environment Constraint: Random Forest and LightGBM were blocked by
+     Windows Application Control policy during development.
+
+================================================================================
+10. FUTURE SCOPE
+================================================================================
+
+  1. Multi-class classification (normal / low / moderate / high)
+  2. Time-series analysis for degradation trend detection
+  3. Integration with real IoT sensors for live monitoring
+  4. Dashboard with historical data visualization
+  5. Ensemble of multiple models for robust prediction
+  6. Cross-validation for more reliable performance estimates
+  7. Testing on real industrial motor data
+
+================================================================================
+11. REFERENCES
+================================================================================
+
+  [1] Kaggle Dataset - Industrial Motor Data
+      https://www.kaggle.com/datasets/danielpetrova/industrial-motor-data
+
+  [2] Chen, T. & Guestrin, C. (2016). "XGBoost: A Scalable Tree Boosting
+      System." Proceedings of the 22nd ACM SIGKDD International Conference
+      on Knowledge Discovery and Data Mining.
+
+  [3] Pedregosa, F. et al. (2011). "Scikit-learn: Machine Learning in
+      Python." Journal of Machine Learning Research, 12, 2825-2830.
+
+  [4] GitHub Repository
+      https://github.com/jatt47508/Induction-Motor-ML
+
+  [5] Live Demo
+      https://jatt47508.github.io/Induction-Motor-ML/
+
+================================================================================
+                          END OF REPORT
+================================================================================
