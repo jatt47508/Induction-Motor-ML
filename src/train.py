@@ -1,34 +1,55 @@
 import click
 import pandas as pd
 from pathlib import Path
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
-from sklearn.neural_network import MLPClassifier
-from xgboost import XGBClassifier
-from lightgbm import LGBMClassifier
 import joblib
 
 FEATURES = ["voltage", "current", "temperature", "vibration"]
 TARGET = "label"
 
-MODELS = {
-    "random_forest": RandomForestClassifier(n_estimators=200, max_depth=10, random_state=42, n_jobs=-1),
-    "xgboost": XGBClassifier(n_estimators=200, max_depth=6, random_state=42, n_jobs=-1, eval_metric="logloss"),
-    "lightgbm": LGBMClassifier(n_estimators=200, max_depth=6, random_state=42, n_jobs=-1, verbose=-1),
-    "svm": SVC(kernel="rbf", probability=True, random_state=42),
-    "mlp": MLPClassifier(hidden_layer_sizes=(64, 32), max_iter=500, random_state=42),
-}
+
+def get_models():
+    models = {}
+    try:
+        from sklearn.ensemble import RandomForestClassifier
+        models["random_forest"] = RandomForestClassifier(n_estimators=200, max_depth=10, random_state=42, n_jobs=-1)
+    except (ImportError, OSError):
+        pass
+    try:
+        from sklearn.svm import SVC
+        models["svm"] = SVC(kernel="rbf", probability=True, random_state=42)
+    except (ImportError, OSError):
+        pass
+    try:
+        from sklearn.neural_network import MLPClassifier
+        models["mlp"] = MLPClassifier(hidden_layer_sizes=(64, 32), max_iter=500, random_state=42)
+    except (ImportError, OSError):
+        pass
+    try:
+        from xgboost import XGBClassifier
+        models["xgboost"] = XGBClassifier(n_estimators=200, max_depth=6, random_state=42, n_jobs=-1, eval_metric="logloss")
+    except (ImportError, OSError):
+        pass
+    try:
+        from lightgbm import LGBMClassifier
+        models["lightgbm"] = LGBMClassifier(n_estimators=200, max_depth=6, random_state=42, n_jobs=-1, verbose=-1)
+    except (ImportError, OSError):
+        pass
+    return models
 
 
 @click.command()
 @click.option("--data", "data_path", type=click.Path(exists=True, path_type=Path), required=True)
-@click.option("--model", "model_name", type=click.Choice(list(MODELS.keys())), default="random_forest", show_default=True)
+@click.option("--model", "model_name", default="random_forest", show_default=True)
 @click.option("--output", "output_path", type=click.Path(path_type=Path), default=Path("models/model.pkl"))
 def main(data_path: Path, model_name: str, output_path: Path):
+    models = get_models()
+    if model_name not in models:
+        raise SystemExit(f"Unknown model '{model_name}'. Available: {list(models.keys())}")
+
     df = pd.read_csv(data_path)
     X, y = df[FEATURES], df[TARGET]
 
-    model = MODELS[model_name]
+    model = models[model_name]
     print(f"Training {model_name} on {X.shape[0]} samples...")
     model.fit(X, y)
 

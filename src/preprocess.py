@@ -6,8 +6,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import joblib
 
+RAW_FEATURES = ["Voltage (V)", "Current (A)", "Temperature (\u00b0C)", "Vibration (mm/s)"]
 FEATURES = ["voltage", "current", "temperature", "vibration"]
 TARGET = "label"
+
+LABEL_MAP = {"normal": 0, "low": 1, "moderate": 1, "high": 1}
 
 
 @click.command()
@@ -19,11 +22,21 @@ def main(input_path: Path, output_dir: Path, test_size: float, seed: int):
     df = pd.read_csv(input_path)
     print(f"Loaded {df.shape}")
 
+    rename_map = dict(zip(RAW_FEATURES, FEATURES))
+    rename_map["Label"] = "label"
+    df = df.rename(columns=rename_map)
+
+    if "label" in df.columns:
+        df["label"] = df["label"].map(LABEL_MAP)
+
     missing = [c for c in FEATURES + [TARGET] if c not in df.columns]
     if missing:
         raise SystemExit(f"Missing columns: {missing}")
 
     df = df.dropna(subset=FEATURES + [TARGET])
+    df[TARGET] = df[TARGET].astype(int)
+    print(f"Label distribution:\n{df[TARGET].value_counts().sort_index()}")
+
     X, y = df[FEATURES], df[TARGET]
 
     scaler = StandardScaler()

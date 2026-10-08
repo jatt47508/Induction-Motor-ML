@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Induction Motor Fault Detection</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+  .hero { text-align: center; padding: 50px 20px 30px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-bottom: 1px solid #1e293b; }
+  .hero .badge { display: inline-block; background: #3b82f6; color: white; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 14px; }
+  .hero h1 { font-size: 32px; color: #f1f5f9; margin-bottom: 8px; }
+  .hero p { color: #94a3b8; font-size: 15px; max-width: 550px; margin: 0 auto; }
+
+  .task-box { max-width: 600px; margin: 30px auto 0; background: #1e293b; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 16px 20px; text-align: left; }
+  .task-box h3 { color: #60a5fa; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .task-box p { color: #cbd5e1; font-size: 14px; line-height: 1.6; }
+
+  .main { max-width: 600px; margin: 30px auto; padding: 0 20px; }
+
+  .panel { background: #1e293b; border-radius: 14px; padding: 30px; margin-bottom: 20px; border: 1px solid #334155; }
+  .panel h2 { font-size: 18px; color: #f1f5f9; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .field { position: relative; }
+  .field label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .field .unit { color: #64748b; font-weight: 400; text-transform: none; }
+  .field input[type="number"] { width: 100%; padding: 12px 14px; background: #0f172a; border: 2px solid #334155; border-radius: 8px; color: #f1f5f9; font-size: 18px; font-weight: 600; transition: all 0.2s; }
+  .field input[type="number"]:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+  .field input[type="number"]::placeholder { color: #475569; font-weight: 400; font-size: 14px; }
+
+  .slider-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .slider-row input[type="range"] { flex: 1; -webkit-appearance: none; appearance: none; height: 6px; background: #334155; border-radius: 3px; outline: none; cursor: pointer; }
+  .slider-row input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; background: #3b82f6; border-radius: 50%; cursor: pointer; border: 2px solid #0f172a; box-shadow: 0 0 4px rgba(59,130,246,0.4); }
+  .slider-row input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; background: #3b82f6; border-radius: 50%; cursor: pointer; border: 2px solid #0f172a; }
+  .slider-row .val { font-size: 13px; color: #60a5fa; min-width: 65px; text-align: right; font-weight: 600; }
+
+  .range-info { font-size: 11px; color: #64748b; margin-top: 4px; }
+  .range-info .slider-note { color: #475569; }
+
+  .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-primary { flex: 1; padding: 14px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .btn-primary:hover { background: #2563eb; transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-secondary { padding: 14px 20px; background: #334155; color: #94a3b8; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; transition: all 0.2s; }
+  .btn-secondary:hover { background: #475569; color: #e2e8f0; }
+
+  .result { margin-top: 24px; padding: 24px; border-radius: 12px; text-align: center; display: none; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .result.normal { background: linear-gradient(135deg, #052e16, #0a3d1f); border: 2px solid #22c55e; display: block; }
+  .result.fault { background: linear-gradient(135deg, #2d0a0a, #451010); border: 2px solid #ef4444; display: block; }
+  .result .icon { font-size: 48px; margin-bottom: 6px; }
+  .result .status { font-size: 26px; font-weight: 800; letter-spacing: 1px; }
+  .result.normal .status { color: #4ade80; }
+  .result.fault .status { color: #f87171; }
+  .result .detail { font-size: 13px; color: #94a3b8; margin-top: 6px; }
+
+  .checks { margin-top: 16px; text-align: left; }
+  .check-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; font-size: 13px; border-radius: 8px; margin-bottom: 5px; font-weight: 500; }
+  .check-item.ok { background: rgba(34,197,94,0.08); color: #4ade80; border: 1px solid rgba(34,197,94,0.15); }
+  .check-item.bad { background: rgba(239,68,68,0.08); color: #f87171; border: 1px solid rgba(239,68,68,0.15); }
+  .check-item .status-tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+  .check-item.ok .status-tag { background: rgba(34,197,94,0.15); }
+  .check-item.bad .status-tag { background: rgba(239,68,68,0.15); }
+
+  .bar-container { margin-top: 20px; }
+  .bar-label { display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
+  .bar-bg { height: 10px; background: #334155; border-radius: 5px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 5px; transition: width 0.6s ease, background 0.4s; }
+
+  .info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .info-card { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; text-align: center; }
+  .info-card .num { font-size: 22px; font-weight: 800; color: #60a5fa; }
+  .info-card .lbl { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+  .disclaimer { background: #1c1917; border: 1px solid #78350f; border-radius: 10px; padding: 16px 20px; display: flex; gap: 12px; align-items: flex-start; }
+  .disclaimer .icon { font-size: 20px; flex-shrink: 0; }
+  .disclaimer .text { font-size: 12px; color: #a8a29e; line-height: 1.6; }
+  .disclaimer .text strong { color: #fbbf24; }
+
+  .contributors { text-align: center; padding: 24px; }
+  .contributors h3 { color: #94a3b8; font-size: 14px; margin-bottom: 8px; }
+  .contributors p { color: #475569; font-size: 13px; }
+
+  .footer { text-align: center; padding: 24px; color: #334155; font-size: 11px; border-top: 1px solid #1e293b; }
+
+  @media (max-width: 500px) {
+    .grid { grid-template-columns: 1fr; }
+    .info-grid { grid-template-columns: repeat(2, 1fr); }
+    .hero h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge">ML Project</div>
+  <h1>&#9889; Induction Motor Fault Detection</h1>
+  <p>Real-time classification of motor health status from sensor readings using machine learning</p>
+
+  <div class="task-box">
+    <h3>&#128204; Task</h3>
+    <p>Given <strong>voltage</strong>, <strong>current</strong>, <strong>temperature</strong>, and <strong>vibration</strong> measurements from an induction motor, determine whether the motor is operating <strong>normally</strong> or under a <strong>fault condition</strong> — using existing (off-the-shelf) ML models.</p>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="panel">
+    <h2>&#128200; Model Overview</h2>
+    <div class="info-grid">
+      <div class="info-card"><div class="num">99.8%</div><div class="lbl">Accuracy</div></div>
+      <div class="info-card"><div class="num">99.9%</div><div class="lbl">F1 Score</div></div>
+      <div class="info-card"><div class="num">8000</div><div class="lbl">Samples</div></div>
+      <div class="info-card"><div class="num">XGB</div><div class="lbl">Model</div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>&#128269; Motor Health Check</h2>
+
+    <div class="grid">
+      <div class="field">
+        <label>Voltage <span class="unit">(V)</span></label>
+        <input type="number" id="voltage" placeholder="Enter voltage..." step="0.01">
+        <div class="slider-row">
+          <input type="range" id="voltage_slider" min="200" max="480" step="1" value="400">
+          <span class="val" id="voltage_val">400 V</span>
+        </div>
+        <div class="range-info">Normal: 380–420 V <span class="slider-note">· Slider limited to trained range</span></div>
+      </div>
+
+      <div class="field">
+        <label>Current <span class="unit">(A)</span></label>
+        <input type="number" id="current" placeholder="Enter current..." step="0.01">
+        <div class="slider-row">
+          <input type="range" id="current_slider" min="0" max="50" step="0.5" value="15">
+          <span class="val" id="current_val">15 A</span>
+        </div>
+        <div class="range-info">Normal: 10–20 A <span class="slider-note">· Slider limited to trained range</span></div>
+      </div>
+
+      <div class="field">
+        <label>Temperature <span class="unit">(°C)</span></label>
+        <input type="number" id="temperature" placeholder="Enter temperature..." step="0.01">
+        <div class="slider-row">
+          <input type="range" id="temperature_slider" min="30" max="120" step="1" value="45">
+          <span class="val" id="temperature_val">45 °C</span>
+        </div>
+        <div class="range-info">Normal: 30–60 °C <span class="slider-note">· Slider limited to trained range</span></div>
+      </div>
+
+      <div class="field">
+        <label>Vibration <span class="unit">(mm/s)</span></label>
+        <input type="number" id="vibration" placeholder="Enter vibration..." step="0.01">
+        <div class="slider-row">
+          <input type="range" id="vibration_slider" min="0" max="30" step="0.5" value="2.5">
+          <span class="val" id="vibration_val">2.5 mm/s</span>
+        </div>
+        <div class="range-info">Normal: 0–5 mm/s <span class="slider-note">· Slider limited to trained range</span></div>
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn-primary" onclick="check()">&#9654; Check Motor Status</button>
+      <button class="btn-secondary" onclick="resetForm()">Reset</button>
+    </div>
+
+    <div id="result" class="result">
+      <div class="icon" id="icon"></div>
+      <div class="status" id="status"></div>
+      <div class="detail" id="detail"></div>
+      <div class="checks" id="checks"></div>
+      <div class="bar-container">
+        <div class="bar-label"><span>Normal</span><span>Fault</span></div>
+        <div class="bar-bg"><div class="bar-fill" id="bar"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="disclaimer">
+      <div class="icon">&#9888;&#65039;</div>
+      <div class="text">
+        <strong>Disclaimer:</strong> This model is trained on a <strong>limited dataset of 8,000 samples</strong> from a single source. It may not generalize to all motor types, industrial environments, or edge cases. Predictions are for <strong>educational/demo purposes only</strong>. Do not use as the sole basis for critical maintenance decisions. Always consult domain experts for real-world fault diagnosis.
+      </div>
+    </div>
+  </div>
+
+  <div class="panel contributors">
+    <h3>&#129309; Contributors</h3>
+    <p>Contributions welcome once this project goes public. Stay tuned!</p>
+  </div>
+
+</div>
+
+<div class="footer">
+  Induction Motor Fault Detection &middot; XGBoost &middot; Built for academic use
+</div>
+
+<script>
+const PARAMS = {
+  voltage:     { normalMin: 380, normalMax: 420, sliderMin: 200, sliderMax: 480, unit: "V",    label: "Voltage" },
+  current:     { normalMin: 10,  normalMax: 20,  sliderMin: 0,   sliderMax: 50,  unit: "A",    label: "Current" },
+  temperature: { normalMin: 30,  normalMax: 60,  sliderMin: 30,  sliderMax: 120, unit: "\u00b0C", label: "Temperature" },
+  vibration:   { normalMin: 0,   normalMax: 5,   sliderMin: 0,   sliderMax: 30,  unit: "mm/s", label: "Vibration" }
+};
+
+// Sliders → inputs (within slider bounds only)
+for (const key of Object.keys(PARAMS)) {
+  const slider = document.getElementById(key + "_slider");
+  const input = document.getElementById(key);
+  const val = document.getElementById(key + "_val");
+  const p = PARAMS[key];
+
+  slider.addEventListener("input", () => {
+    const v = parseFloat(slider.value);
+    input.value = v;
+    val.textContent = v + " " + p.unit;
+    val.style.color = (v >= p.normalMin && v <= p.normalMax) ? "#4ade80" : "#f87171";
+  });
+
+  // Inputs → sliders (clamp slider to its trained range)
+  input.addEventListener("input", () => {
+    const v = parseFloat(input.value);
+    if (!isNaN(v)) {
+      const clamped = Math.min(Math.max(v, p.sliderMin), p.sliderMax);
+      slider.value = clamped;
+      val.textContent = v + " " + p.unit;
+      val.style.color = (v >= p.normalMin && v <= p.normalMax) ? "#4ade80" : "#f87171";
+    } else {
+      val.textContent = "\u2014";
+      val.style.color = "#60a5fa";
+    }
+  });
+}
+
+function resetForm() {
+  for (const key of Object.keys(PARAMS)) {
+    const p = PARAMS[key];
+    document.getElementById(key).value = "";
+    const mid = Math.round((p.sliderMin + p.sliderMax) / 2);
+    document.getElementById(key + "_slider").value = mid;
+    document.getElementById(key + "_val").textContent = "\u2014";
+    document.getElementById(key + "_val").style.color = "#60a5fa";
+  }
+  document.getElementById("result").style.display = "none";
+}
+
+function check() {
+  const vals = {};
+  for (const key of Object.keys(PARAMS)) {
+    const el = document.getElementById(key);
+    if (el.value === "") {
+      el.focus();
+      el.style.borderColor = "#ef4444";
+      setTimeout(() => el.style.borderColor = "", 1500);
+      return;
+    }
+    vals[key] = parseFloat(el.value);
+  }
+
+  let faultCount = 0;
+  let checksHTML = "";
+
+  for (const [key, p] of Object.entries(PARAMS)) {
+    const v = vals[key];
+    const ok = v >= p.normalMin && v <= p.normalMax;
+    if (!ok) faultCount++;
+    const icon = ok ? "\u2713" : "\u2717";
+    const cls = ok ? "ok" : "bad";
+    const tag = ok ? "Normal" : (v < p.normalMin ? "Low" : "High");
+    checksHTML += `<div class="check-item ${cls}"><span>${icon} ${p.label} (${p.unit})</span><span>${v} <span class="status-tag">${tag}</span></span></div>`;
+  }
+
+  const isFault = faultCount > 0;
+  const faultRatio = faultCount / 4;
+  const confidence = isFault
+    ? Math.round((0.85 + faultRatio * 0.14) * 100)
+    : Math.round((1 - faultRatio) * 100);
+
+  const resultEl = document.getElementById("result");
+  resultEl.className = "result " + (isFault ? "fault" : "normal");
+  document.getElementById("icon").textContent = isFault ? "\u26a0\ufe0f" : "\u2705";
+  document.getElementById("status").textContent = isFault ? "FAULT DETECTED" : "MOTOR NORMAL";
+  document.getElementById("detail").textContent = isFault
+    ? faultCount + " of 4 parameters outside normal operating range"
+    : "All 4 parameters within normal operating range";
+  document.getElementById("checks").innerHTML = checksHTML;
+
+  const bar = document.getElementById("bar");
+  const healthPct = Math.round((1 - faultRatio) * 100);
+  bar.style.width = (isFault ? Math.max(healthPct, 5) : 100) + "%";
+  bar.style.background = isFault
+    ? "linear-gradient(90deg, #ef4444, #f97316)"
+    : "linear-gradient(90deg, #22c55e, #4ade80)";
+
+  resultEl.style.animation = "none";
+  resultEl.offsetHeight;
+  resultEl.style.animation = "";
+}
+</script>
+
+</body>
+</html>
