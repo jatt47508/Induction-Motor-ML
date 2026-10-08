@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Data — raw is huge, don't commit
+data/raw/*
+!data/raw/.gitkeep
+*.csv
+!data/processed/*.csv
+!tests/fixtures/*.csv
+
+# Models — large binaries
+models/*.pkl
+models/*.joblib
+models/*.h5
+models/*.pt
+models/*.onnx
+!models/.gitkeep
+
+# Results — keep metrics but ignore large images if needed
+# results/ is committed
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+
+# Jupyter
+.ipynb_checkpoints/
