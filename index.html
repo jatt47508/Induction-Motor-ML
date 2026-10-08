@@ -79,11 +79,24 @@
   .disclaimer .text { font-size: 12px; color: #a8a29e; line-height: 1.6; }
   .disclaimer .text strong { color: #fbbf24; }
 
-  .contributors { text-align: center; padding: 24px; }
-  .contributors h3 { color: #94a3b8; font-size: 14px; margin-bottom: 8px; }
-  .contributors p { color: #475569; font-size: 13px; }
-
   .footer { text-align: center; padding: 24px; color: #334155; font-size: 11px; border-top: 1px solid #1e293b; }
+
+  .credits-bar { background: #1e293b; border: 1px solid #334155; border-radius: 14px; overflow: hidden; margin-bottom: 20px; }
+  .credits-toggle { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; cursor: pointer; user-select: none; transition: background 0.2s; }
+  .credits-toggle:hover { background: #253349; }
+  .credits-toggle .label { font-size: 13px; color: #94a3b8; font-weight: 500; }
+  .credits-toggle .arrow { color: #60a5fa; font-size: 14px; transition: transform 0.3s ease; }
+  .credits-toggle.open .arrow { transform: rotate(180deg); }
+  .credits-body { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+  .credits-body.open { max-height: 500px; }
+  .credits-inner { padding: 0 24px 20px; border-top: 1px solid #334155; }
+  .credits-inner .uni { text-align: center; color: #60a5fa; font-size: 13px; font-weight: 600; margin-top: 16px; margin-bottom: 12px; letter-spacing: 0.5px; }
+  .member-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 440px; margin: 0 auto; }
+  .member { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; text-align: center; }
+  .member .name { color: #e2e8f0; font-size: 13px; font-weight: 600; }
+  .member .roll { color: #64748b; font-size: 11px; margin-top: 2px; }
+  .credits-body .sources { text-align: center; color: #334155; font-size: 10px; margin-top: 18px; line-height: 1.7; }
+  .credits-body .sources span { color: #475569; }
 
   @media (max-width: 500px) {
     .grid { grid-template-columns: 1fr; }
@@ -188,9 +201,27 @@
     </div>
   </div>
 
-  <div class="panel contributors">
-    <h3>&#129309; Contributors</h3>
-    <p>Contributions welcome once this project goes public. Stay tuned!</p>
+  <div class="credits-bar" id="creditsBar">
+    <div class="credits-toggle" id="creditsToggle" onclick="toggleCredits()">
+      <span class="label">&#129309; Project members &amp; sources</span>
+      <span class="arrow" id="creditsArrow">&#9650;</span>
+    </div>
+    <div class="credits-body" id="creditsBody">
+      <div class="credits-inner">
+        <div class="uni">We are students from CV Raman Global University</div>
+        <div class="member-list">
+          <div class="member"><div class="name">Jatin Kumar Mallick</div><div class="roll">2401021032</div></div>
+          <div class="member"><div class="name">Swayam Priya Sahoo</div><div class="roll">2401020673</div></div>
+          <div class="member"><div class="name">Divyam Raj</div><div class="roll">2401020936</div></div>
+          <div class="member"><div class="name">Dibya Debabrata Dash</div><div class="roll">2401020666</div></div>
+          <div class="member"><div class="name">Aditya Kumar Barik</div><div class="roll">2401020979</div></div>
+          <div class="member"><div class="name">Chandromouli Shil</div><div class="roll">24010121061</div></div>
+        </div>
+        <div class="sources">
+          <span>Sources:</span> Dataset by <span>danielpetrova</span> on Kaggle &middot; Built with <span>OpenCode CLI</span> &middot; Model: <span>XGBoost (scikit-learn)</span> &middot; Hosted on <span>GitHub Pages</span>
+        </div>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -234,6 +265,13 @@ for (const key of Object.keys(PARAMS)) {
       val.style.color = "#60a5fa";
     }
   });
+}
+
+function toggleCredits() {
+  const toggle = document.getElementById("creditsToggle");
+  const body = document.getElementById("creditsBody");
+  toggle.classList.toggle("open");
+  body.classList.toggle("open");
 }
 
 function resetForm() {
