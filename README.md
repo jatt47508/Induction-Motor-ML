@@ -12,9 +12,9 @@ Given **voltage**, **current**, **temperature**, and **vibration** measurements 
 
 ## Try It Live
 
-Open **[index.html](./index.html)** directly in your browser — no setup needed.
+**[Open Fault Detector](https://jatt47508.github.io/Induction-Motor-ML/)**
 
-Enter motor readings and get an instant **Normal / Fault** prediction.
+Enter motor readings and get an instant **Normal / Fault** prediction — no setup needed.
 
 ---
 
@@ -60,6 +60,10 @@ python src/evaluate.py --model models/xgboost.pkl --data data/processed/test.csv
 | Accuracy | **99.8%** |
 | F1 Score | **99.9%** |
 | ROC-AUC | **1.0000** |
+
+**Confusion Matrix:**
+
+![Confusion Matrix](results/confusion_matrix.png)
 
 ---
 
